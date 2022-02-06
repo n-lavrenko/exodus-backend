@@ -2,10 +2,9 @@ import { app } from './app'
 // import { isLocalDB, sequelize } from './sequelize/connect'
 // import { createAssociations } from './sequelize/models/associations'
 // import { sequelizeSync } from './sequelize/sync'
-import { env } from './tools/parse-env'
 
 
-const PORT = +env.PORT || 3000
+const PORT = +process.env.PORT || 3000
 
 
 // async function assertDatabaseConnectionOk() {
@@ -27,7 +26,7 @@ async function init() {
   // await sequelizeSync()
   
   app.listen(PORT, () => {
-    console.log('Mozaiq Node.js server listening on http://localhost:' + PORT)
+    console.log('Exodus Node.js server listening on http://localhost:' + PORT)
   })
 }
 
