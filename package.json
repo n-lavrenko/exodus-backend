@@ -1,0 +1,37 @@
+{
+  "name": "exodus-backend",
+  "version": "1.0.0",
+  "description": "Node.js API server",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules --experimental-specifier-resolution=node node_modules/jest/bin/jest.js",
+    "start": "node --experimental-specifier-resolution=node src/index.js",
+    "nodemon": "nodemon -e js,pug --experimental-specifier-resolution=node src/index.js --config nodemon.json"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ExodusMovementInterviews/Nikita-Lavrenko.git"
+  },
+  "keywords": [
+    "nodejs",
+    "expressjs",
+    "api",
+    "sqlite3"
+  ],
+  "author": "lavrenonik@gmail.com",
+  "license": "UNLICENSED",
+  "private": "true",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.17.2",
+    "sequelize": "^6.15.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.8.0",
+    "eslint-plugin-jest": "^26.0.0",
+    "jest": "^27.5.0",
+    "nodemon": "^2.0.15",
+    "supertest": "^6.2.2"
+  }
+}
