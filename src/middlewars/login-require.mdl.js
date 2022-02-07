@@ -30,7 +30,6 @@ export const loginRequiredMdl = (req, res, next) => {
   }
   
   req.userId = parsed.id
-  req.userRole = parsed.role
   
   next()
   

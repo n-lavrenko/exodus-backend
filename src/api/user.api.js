@@ -76,6 +76,9 @@ const signup = async (req, res) => {
 export const getMyAccount = async (req, res) => {
   try {
     const user = await User.findOne({where: {id: req.userId}})
+    if (!user) {
+      res.status(404).send({message: 'User not found'})
+    }
     res.send({
       user: {
         firstName: user.firstName,
