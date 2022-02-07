@@ -7,5 +7,7 @@ export const {
   SECRET_PASSWORD,
   SECRET_JWT,
   JWT_EXP_DAYS,
-  PORT
+  PORT,
+  PLAID_CLIENT_ID,
+  PLAID_SECRET
 } = process.env

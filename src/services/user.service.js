@@ -1,8 +1,8 @@
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import moment from 'moment'
-import { SECRET_PASSWORD, SECRET_JWT, JWT_EXP_DAYS } from '../../envs.js';
-import { User } from '../models/user.model'
+import { SECRET_PASSWORD, SECRET_JWT, JWT_EXP_DAYS } from '../envs.js';
+import { User } from '../sequelize/models/user.model.js'
 
 
 class UserService {

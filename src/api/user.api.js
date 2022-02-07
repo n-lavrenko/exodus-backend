@@ -1,8 +1,13 @@
 import express from 'express'
 import { loginRequiredMdl } from '../middlewars/login-require.mdl'
 import { User } from '../sequelize/models/user.model'
-import { userService } from '../sequelize/services/user.service'
-import { msgEmailOrPasswordInvalid, msgSigninSuccess, msgSignupSuccess } from '../constants.js';
+import { userService } from '../services/user.service'
+import {
+  msgEmailDuplicated,
+  msgEmailOrPasswordInvalid, msgRequiredFieldsError,
+  msgSigninSuccess,
+  msgSignupSuccess,
+} from '../constants.js';
 
 
 const router = express.Router()
@@ -37,9 +42,12 @@ const signin = async (req, res) => {
 }
 
 const signup = async (req, res) => {
+  const {firstName, lastName, email, password} = req.body
   try {
-    const user = await User.create(req.body)
-  
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).send({success: false, message: msgRequiredFieldsError})
+    }
+    const user = await User.create({firstName, lastName, email, password})
     const accessToken = userService.createJWT(user.id)
     
     res.setHeader('Token-Type', 'Bearer')
@@ -57,7 +65,10 @@ const signup = async (req, res) => {
       message: msgSignupSuccess,
     })
   } catch (e) {
-    res.status(500).send({data: null, message: e})
+    if (e?.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).send({success: false, message: msgEmailDuplicated(email)})
+    }
+    res.status(500).send({success: false, message: e})
   }
 }
 

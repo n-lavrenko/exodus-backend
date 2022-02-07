@@ -11,6 +11,10 @@ router.get('/', (req, res) => {
 })
 
 router.use('/api/*', cors(), function (req, res, next) {
+  console.log(req.method + ': ', req.baseUrl)
+  if (req.method.includes('POST', 'PUT')) {
+    console.log(req.body)
+  }
   next()
 })
 
@@ -18,6 +22,6 @@ router.use('/api/*', cors(), function (req, res, next) {
 router.use('/api/user', userRouter)
 
 // Return 404 if API endpoint don't exists:
-router.get('*', (req, res) => {
-  res.status(404).send({ message: 'Resource not found.' });
+router.use('/api/*', (req, res) => {
+  res.status(404).send({ message: 'Method not implemented' });
 });

@@ -1,5 +1,5 @@
 import Sequelize from 'sequelize'
-import { userService } from '../services/user.service'
+import { userService } from '../../services/user.service'
 import { defaultModelOptions } from './default-options.js';
 
 

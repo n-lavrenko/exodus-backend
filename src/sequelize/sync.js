@@ -3,7 +3,6 @@ import { sequelize } from './connect'
 
 export const sequelizeSync = async (isForce = false) => {
   try {
-    await sequelize.authenticate()
     await sequelize.sync({force: isForce})
     console.log('Sync DB: OK', isForce ? 'in force mode!' : '')
   } catch (error) {
