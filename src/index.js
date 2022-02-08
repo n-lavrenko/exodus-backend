@@ -24,6 +24,7 @@ async function init() {
   await assertDatabaseConnectionOk()
   createAssociations()
   await sequelizeSync()
+  // await sequelizeSync(true)
   
   app.listen(port, () => {
     console.log('Exodus Node.js server listening on http://localhost:' + port)

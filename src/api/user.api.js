@@ -30,7 +30,6 @@ const signin = async (req, res) => {
       lastName: user.lastName,
       fullName: user.fullName,
       email: user.email,
-      isBankAccountLinked: user.isBankAccountLinked
     },
     accessToken,
     message: msgSigninSuccess,
@@ -61,7 +60,6 @@ const signup = async (req, res) => {
         lastName: user.lastName,
         fullName: user.fullName,
         email: user.email,
-        isBankAccountLinked: user.isBankAccountLinked
       },
       accessToken,
       message: msgSignupSuccess,
@@ -86,8 +84,7 @@ export const getMyProfile = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         fullName: user.fullName,
-        email: user.email,
-        isBankAccountLinked: user.isBankAccountLinked
+        email: user.email
       },
     })
   } catch (e) {

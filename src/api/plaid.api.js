@@ -1,7 +1,6 @@
 import express from 'express';
 import { loginRequiredMdl } from '../middlewars/login-require.mdl';
 import { PlaidLinkModel } from '../sequelize/models/plaid-link.model.js';
-import { UserModel } from '../sequelize/models/user.model.js';
 import { plaidClient } from '../services/plaid.service.js';
 
 
@@ -42,12 +41,7 @@ async function exchangePublicToken(req, res) {
     const accessToken = response.data.access_token;
     const itemId = response.data.item_id;
     await PlaidLinkModel.create({userId: req.userId, accessToken, itemId})
-    await UserModel.update({isBankAccountLinked: true}, {
-      where: {
-        id: req.userId,
-      },
-    })
-    res.send({accessToken, itemId})
+    res.send({accessToken, itemId, success: true})
   } catch (err) {
     console.log(err)
     res.status(500).send(err)
@@ -75,9 +69,41 @@ async function getAccounts(req, res) {
   }
 }
 
+async function unlinkPlaid(req, res) {
+  try {
+    await PlaidLinkModel.destroy({
+      where: {
+        userId: req.userId,
+      },
+    })
+    res.send({message: 'Unlinking was successfully done'})
+  } catch (e) {
+    res.status(500).send({message: 'Something went wrong', error: e})
+  }
+}
+
+async function checkIsUserLinked(req, res) {
+  try {
+    const link = await PlaidLinkModel.findOne({
+      where: {
+        userId: req.userId,
+      },
+    })
+    if (!link) {
+      return res.send({isLinked: false, message: 'Link was not found'})
+    }
+    res.send({isLinked: true, message: 'Link was found', link})
+  } catch (e) {
+    res.status(500).send({message: 'Something went wrong', error: e})
+  }
+}
+
 
 router.post('/create-link-token', loginRequiredMdl, createLinkToken)
 router.post('/exchange-public-token', loginRequiredMdl, exchangePublicToken)
 router.get('/accounts', loginRequiredMdl, getAccounts)
+
+router.post('/unlink-plaid', loginRequiredMdl, unlinkPlaid)
+router.get('/is-linked', loginRequiredMdl, checkIsUserLinked)
 
 export const plaidRouter = router

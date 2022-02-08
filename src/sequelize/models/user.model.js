@@ -25,11 +25,7 @@ UserModel.init(
       unique: true,
       allowNull: false,
     },
-    password: DataTypes.STRING,
-    isBankAccountLinked: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    }
+    password: DataTypes.STRING
   },
   {
     ...defaultModelOptions,
