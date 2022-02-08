@@ -1,6 +1,5 @@
 import express from 'express'
 import { router } from './api'
-// import './sequelize/models/associations'
 
 
 export const app = express()

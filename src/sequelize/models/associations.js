@@ -1,8 +1,8 @@
-import { BankAccount } from './bank-account.model.js';
-import { User } from './user.model'
+import { PlaidLinkModel } from './plaid-link.model.js';
+import { UserModel } from './user.model'
 
 
 export const createAssociations = () => {
-  User.hasMany(BankAccount)
-  BankAccount.belongsTo(User)
+  UserModel.hasOne(PlaidLinkModel)
+  PlaidLinkModel.belongsTo(UserModel)
 }

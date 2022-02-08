@@ -1,6 +1,6 @@
 import express from 'express'
 import { loginRequiredMdl } from '../middlewars/login-require.mdl'
-import { User } from '../sequelize/models/user.model'
+import { UserModel } from '../sequelize/models/user.model'
 import { userService } from '../services/user.service'
 import {
   msgEmailDuplicated,
@@ -30,6 +30,7 @@ const signin = async (req, res) => {
       lastName: user.lastName,
       fullName: user.fullName,
       email: user.email,
+      isBankAccountLinked: user.isBankAccountLinked
     },
     accessToken,
     message: msgSigninSuccess,
@@ -47,7 +48,7 @@ const signup = async (req, res) => {
     if (!firstName || !lastName || !email || !password) {
       return res.status(400).send({success: false, message: msgRequiredFieldsError})
     }
-    const user = await User.create({firstName, lastName, email, password})
+    const user = await UserModel.create({firstName, lastName, email, password})
     const accessToken = userService.createJWT(user.id)
     
     res.setHeader('Token-Type', 'Bearer')
@@ -60,6 +61,7 @@ const signup = async (req, res) => {
         lastName: user.lastName,
         fullName: user.fullName,
         email: user.email,
+        isBankAccountLinked: user.isBankAccountLinked
       },
       accessToken,
       message: msgSignupSuccess,
@@ -73,9 +75,9 @@ const signup = async (req, res) => {
 }
 
 
-export const getMyAccount = async (req, res) => {
+export const getMyProfile = async (req, res) => {
   try {
-    const user = await User.findOne({where: {id: req.userId}})
+    const user = await UserModel.findOne({where: {id: req.userId}})
     if (!user) {
       res.status(404).send({message: 'User not found'})
     }
@@ -85,6 +87,7 @@ export const getMyAccount = async (req, res) => {
         lastName: user.lastName,
         fullName: user.fullName,
         email: user.email,
+        isBankAccountLinked: user.isBankAccountLinked
       },
     })
   } catch (e) {
@@ -98,6 +101,6 @@ router.post('/signup', signup)
 router.post('/signin', signin)
 
 // account:
-router.get('/my-account', loginRequiredMdl, getMyAccount)
+router.get('/my-profile', loginRequiredMdl, getMyProfile)
 
 export const userRouter = router

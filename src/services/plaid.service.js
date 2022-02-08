@@ -3,7 +3,7 @@ import { PLAID_CLIENT_ID, PLAID_SECRET } from '../envs.js';
 
 
 const configuration = new Configuration({
-  basePath: 'sandbox',
+  basePath: 'https://sandbox.plaid.com',
   baseOptions: {
     headers: {
       'PLAID-CLIENT-ID': PLAID_CLIENT_ID,

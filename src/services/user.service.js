@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import moment from 'moment'
 import { SECRET_PASSWORD, SECRET_JWT, JWT_EXP_DAYS } from '../envs.js';
-import { User } from '../sequelize/models/user.model.js'
+import { UserModel } from '../sequelize/models/user.model.js'
 
 
 class UserService {
@@ -26,7 +26,7 @@ class UserService {
   
   async checkUserCredentials(email, password) {
     try {
-      const user = await User.findOne({where: {email}})
+      const user = await UserModel.findOne({where: {email}})
       const isPasswordMatched = this.checkPassword(password, user.password)
       if (isPasswordMatched) return user
       else {

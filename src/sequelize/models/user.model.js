@@ -6,11 +6,11 @@ import { defaultModelOptions } from './default-options.js';
 const {Model, DataTypes} = Sequelize
 
 
-export class User extends Model {
+export class UserModel extends Model {
 }
 
 
-User.init(
+UserModel.init(
   {
     firstName: DataTypes.STRING,
     lastName: DataTypes.STRING,
@@ -37,6 +37,6 @@ User.init(
     tableName: 'user',
   })
 
-User.beforeCreate(user => {
+UserModel.beforeCreate(user => {
   user.password = userService.encryptPassword(user.password)
 })
