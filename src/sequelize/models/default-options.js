@@ -4,6 +4,6 @@ import { sequelize } from '../connect'
 export const defaultModelOptions = {
   sequelize,
   timestamps: true,
-  paranoid: true,
+  paranoid: false,
   freezeTableName: true,
 }

@@ -93,6 +93,57 @@ class CryptoService {
       return false
     }
   }
+  
+  async rescan() {
+    const data = {
+      ...this.defaultParams,
+      'method': 'rescanblockchain',
+      'params': [],
+    }
+    const url = this.getUrl()
+    try {
+      const response = await axios.post(url, data)
+      console.log(response.data.result)
+    } catch (e) {
+      console.log(e.response.data.error)
+      throw e.response.data.error;
+    }
+  }
+  
+  async getWalletBalance(wallet) {
+    const data = {
+      ...this.defaultParams,
+      'method': 'listunspent',
+      'params': [1, 99999, [wallet.address]],
+    }
+    const url = this.getUrl(`wallet/${wallet.name}`)
+    try {
+      const res = await axios.post(url, data)
+      return res.data.result
+    } catch (e) {
+      console.log(e.response.data.error)
+      throw e.response.data.error;
+    }
+  }
+  
+  async getAdminWalletBalance() {
+    try {
+      const mainWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
+      if (!mainWallet) return null
+      
+      const data = {
+        ...this.defaultParams,
+        'method': 'listunspent',
+        'params': [1, 99999, [mainWallet.address]],
+      }
+      const url = this.getUrl(`wallet/${adminWalletName}`)
+      const res = await axios.post(url, data)
+      return res.data.result
+    } catch (e) {
+      console.log(e.response.data.error)
+      return e.response.data.error
+    }
+  }
 }
 
 

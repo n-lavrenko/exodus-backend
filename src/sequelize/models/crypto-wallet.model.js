@@ -15,7 +15,10 @@ CryptoWalletModel.init(
       type: DataTypes.STRING,
       required: true
     },
-    address: DataTypes.STRING,
+    address: {
+      type: DataTypes.STRING,
+      required: true
+    }
   },
   {
     ...defaultModelOptions,
