@@ -3,6 +3,7 @@ import { PORT } from './envs.js';
 import { sequelize } from './sequelize/connect.js';
 import { createAssociations } from './sequelize/models/associations'
 import { sequelizeSync } from './sequelize/sync'
+import { cryptoService } from './services/crypto.service';
 
 
 const port = +PORT || 3000;
@@ -25,6 +26,7 @@ async function init() {
   createAssociations()
   await sequelizeSync()
   // await sequelizeSync(true)
+  await cryptoService.initAdminWallet()
   
   app.listen(port, () => {
     console.log('Exodus Node.js server listening on http://localhost:' + port)

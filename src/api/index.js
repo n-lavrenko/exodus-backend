@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors'
+import { cryptoRouter } from './crypto.api.js';
 import { plaidRouter } from './plaid.api.js';
 import { userRouter } from './user.api.js';
 
@@ -22,6 +23,7 @@ router.use('/api/*', cors(), function (req, res, next) {
 // ROUTES FOR MODELS:
 router.use('/api/user', userRouter)
 router.use('/api/plaid', plaidRouter)
+router.use('/api/crypto', cryptoRouter)
 
 // Return 404 if API endpoint don't exists:
 router.use('/api/*', (req, res) => {

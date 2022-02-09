@@ -23,10 +23,12 @@
   "license": "UNLICENSED",
   "private": "true",
   "dependencies": {
+    "axios": "^0.25.0",
     "cors": "^2.8.5",
     "express": "^4.17.2",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
+    "nanoid": "^3.2.0",
     "pg": "^8.7.3",
     "pg-hstore": "^2.3.4",
     "plaid": "^9.10.0",
