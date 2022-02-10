@@ -22,11 +22,19 @@ async function assertDatabaseConnectionOk() {
 }
 
 async function init() {
-  await assertDatabaseConnectionOk()
-  createAssociations()
-  await sequelizeSync()
-  // await sequelizeSync(true)
-  await cryptoService.initAdminWallet()
+  try {
+    await assertDatabaseConnectionOk()
+    createAssociations()
+    await sequelizeSync()
+    // await sequelizeSync(true)
+    const {balance, success} = await cryptoService.initRootWallets()
+    if (success) {
+      console.log(`Admin wallet has ${balance} BTC`)
+    }
+  } catch (e) {
+    console.log(e)
+    throw e
+  }
   
   app.listen(port, () => {
     console.log('Exodus Node.js server listening on http://localhost:' + port)

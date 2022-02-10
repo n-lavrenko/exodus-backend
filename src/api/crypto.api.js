@@ -34,10 +34,7 @@ async function createWallet(req, res) {
 
 async function getAdminBalance(req, res) {
   try {
-    const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
-    if (!adminWallet) return res.send({message: 'Admin wallet not found'})
-    
-    const result = await cryptoService.getWalletBalance(adminWallet)
+    const result = await cryptoService.getWalletBalance(adminWalletName)
     res.send({success: true, balance: result})
   } catch (e) {
     res.status(500).send({message: 'Something went wrong', error: e})
@@ -63,7 +60,7 @@ async function getUserBalance(req, res) {
       where: {userId: req.userId}
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
-    const result = await cryptoService.getWalletBalance(userWallet)
+    const result = await cryptoService.getWalletBalance(userWallet.name)
     
     res.send({success: true, balance: result})
   } catch (e) {
@@ -79,9 +76,18 @@ async function transaction(req, res) {
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
     
-    const success = await cryptoService.transaction(userWallet, +amount)
+    const success = await cryptoService.transaction(+amount, userWallet)
     
     res.send({success})
+  } catch (e) {
+    res.status(500).send({success: false, error: e})
+  }
+}
+async function depositAdminWallet(req, res) {
+  const {amount} = req.body
+  try {
+    const {success, balance} = await cryptoService.depositAdminWallet(+amount)
+    res.send({success, balance})
   } catch (e) {
     res.status(500).send({success: false, error: e})
   }
@@ -92,5 +98,6 @@ router.get('/admin-balance', loginRequiredMdl, getAdminBalance)
 router.get('/user-balance', loginRequiredMdl, getUserBalance)
 router.post('/transaction', loginRequiredMdl, transaction)
 router.get('/admin-transactions', loginRequiredMdl, getAdminTransactions)
+router.post('/deposit-admin-wallet', depositAdminWallet)
 
 export const cryptoRouter = router

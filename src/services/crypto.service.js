@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { nanoid } from 'nanoid'
-import { adminWalletName } from '../constants.js';
+import { adminWalletName, miningWalletName } from '../constants.js';
 import { CryptoWalletModel } from '../sequelize/models/crypto-wallet.model.js';
 
 
@@ -38,8 +38,8 @@ class CryptoService {
       }
       return {success: false}
     } catch (e) {
-      console.log(e)
-      return {success: false}
+      console.log(e.response.data.error)
+      throw e.response.data.error
     }
   }
   
@@ -74,6 +74,7 @@ class CryptoService {
       throw new Error(e)
     }
   }
+  
   async getTransactions(walletName) {
     const data = {
       ...this.defaultParams,
@@ -87,32 +88,48 @@ class CryptoService {
     }
   }
   
-  async initAdminWallet() {
+  async initRootWallets() {
     try {
-      const isExist = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
-      if (isExist) return true;
-      
+      const isAdminWalletExist = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
+      const isMiningWalletExist = await CryptoWalletModel.findOne({where: {name: miningWalletName}})
+      if (isAdminWalletExist || isMiningWalletExist) return true;
+  
       await this.createWallet(adminWalletName)
-      const {walletAddress} = await this.createWalletAddress(adminWalletName)
-      await this.generateBTCToWalletAddress(walletAddress)
-      await CryptoWalletModel.create({
+      const {walletAddress: walletAdminAddress} = await this.createWalletAddress(adminWalletName)
+      
+      const adminWallet = {
         name: adminWalletName,
-        address: walletAddress,
+        address: walletAdminAddress,
+      }
+      await CryptoWalletModel.create(adminWallet)
+      
+      await this.createWallet(miningWalletName)
+      const {walletAddress: walletMiningAddress} = await this.createWalletAddress(miningWalletName)
+      
+      await CryptoWalletModel.create({
+        name: miningWalletName,
+        address: walletMiningAddress,
       })
-      return true
+      
+      await this.generateBTCToWalletAddress(walletMiningAddress)
+      const miningBalance = await this.getWalletBalance(miningWalletName)
+      if (miningBalance < 40) {
+        await this.generateBTCToWalletAddress(walletMiningAddress, 101)
+      }
+      return await this.transaction(40, adminWallet, miningWalletName)
     } catch (e) {
       console.error('Error in init Admin Wallet')
       return false
     }
   }
   
-  async getWalletBalance(wallet) {
+  async getWalletBalance(walletName) {
     const data = {
       ...this.defaultParams,
       method: 'getbalance',
       params: [],
     }
-    const url = this.getUrl(`wallet/${wallet.name}`)
+    const url = this.getUrl(`wallet/${walletName}`)
     try {
       const res = await axios.post(url, data)
       return res.data.result
@@ -138,10 +155,11 @@ class CryptoService {
     }
   }
   
-  async transaction(userWallet, amount) {
+  async transaction(amount, toWallet, fromWalletName = adminWalletName) {
     try {
-      const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
-      const [walletInfo] = await this.getWalletInfo(adminWallet, amount)
+      const fromWallet = await CryptoWalletModel.findOne({where: {name: fromWalletName}})
+      const [walletInfo] = await this.getWalletInfo(fromWallet, amount)
+      if (!walletInfo) return {success: false, message: 'dont found a listunspent'}
       
       // create a transaction:
       const data = {
@@ -152,7 +170,7 @@ class CryptoService {
             txid: walletInfo.txid,
             vout: 0,
           }],
-          [{[userWallet.address]: amount}]],
+          [{[toWallet.address]: amount}]],
       }
       const url = this.getUrl()
       const res = await axios.post(url, data)
@@ -164,8 +182,8 @@ class CryptoService {
         method: 'signrawtransactionwithwallet',
         params: [transactionHex],
       }
-      const adminWalletUrl = this.getUrl(`wallet/${adminWalletName}`)
-      const signResponse = await axios.post(adminWalletUrl, signData)
+      const signWalletUrl = this.getUrl(`wallet/${fromWalletName}`)
+      const signResponse = await axios.post(signWalletUrl, signData)
       
       const {hex, complete} = signResponse.data.result
       if (!complete) return {success: false, message: 'Signing a transaction with errors'}
@@ -177,12 +195,24 @@ class CryptoService {
         params: [hex, 0],
       }
       await axios.post(url, sendTransactionData)
-      await this.generateBTCToWalletAddress(adminWallet.address, 1)
-      const balance = await cryptoService.getWalletBalance(userWallet)
+      
+      const miningWallet = await CryptoWalletModel.findOne({where: {name: miningWalletName}})
+      await this.generateBTCToWalletAddress(miningWallet.address, 1)
+      
+      const balance = await cryptoService.getWalletBalance(toWallet.name)
       return {success: true, balance}
     } catch (e) {
       console.log(e.response.data.error)
       throw e.response.data.error
+    }
+  }
+  
+  async depositAdminWallet(amount) {
+    try {
+      const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
+      return await this.transaction(amount, adminWallet, miningWalletName)
+    } catch (e) {
+      throw e.message || e.response.data
     }
   }
 }
