@@ -37,7 +37,7 @@ async function getAdminBalance(req, res) {
     const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
     if (!adminWallet) return res.send({message: 'Admin wallet not found'})
     
-    const result = await cryptoService.getAdminWalletBalance()
+    const result = await cryptoService.getWalletBalance(adminWallet)
     res.send({success: true, balance: result})
   } catch (e) {
     res.status(500).send({message: 'Something went wrong', error: e})
@@ -49,7 +49,7 @@ async function getUserBalance(req, res) {
     const userWallet = await CryptoWalletModel.findOne({
       where: {userId: req.userId}
     })
-    if (!userWallet) return res.send({success: false, message: 'User do not have a wallet'})
+    if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
     const result = await cryptoService.getWalletBalance(userWallet)
     
     res.send({success: true, balance: result})
@@ -58,8 +58,25 @@ async function getUserBalance(req, res) {
   }
 }
 
+async function transaction(req, res) {
+  const {amount} = req.body
+  try {
+    const userWallet = await CryptoWalletModel.findOne({
+      where: {userId: req.userId}
+    })
+    if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
+    
+    const result = await cryptoService.transaction(userWallet, amount)
+    
+    res.send({success: true, result})
+  } catch (e) {
+    res.status(500).send({success: false, error: e})
+  }
+}
+
 router.post('/create-wallet', loginRequiredMdl, createWallet)
-router.post('/admin-balance', loginRequiredMdl, getAdminBalance)
-router.post('/user-balance', loginRequiredMdl, getUserBalance)
+router.get('/admin-balance', loginRequiredMdl, getAdminBalance)
+router.get('/user-balance', loginRequiredMdl, getUserBalance)
+router.post('/transaction', loginRequiredMdl, transaction)
 
 export const cryptoRouter = router

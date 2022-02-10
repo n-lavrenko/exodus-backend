@@ -27,8 +27,8 @@ class CryptoService {
     const walletName = name || this.generateWalletName()
     const data = {
       ...this.defaultParams,
-      'method': 'createwallet',
-      'params': [walletName],
+      method: 'createwallet',
+      params: [walletName],
     }
     const url = this.getUrl()
     try {
@@ -46,8 +46,8 @@ class CryptoService {
   async createWalletAddress(walletName) {
     const data = {
       ...this.defaultParams,
-      'method': 'getnewaddress',
-      'params': [walletName],
+      method: 'getnewaddress',
+      params: [walletName],
     }
     const url = this.getUrl(`wallet/${walletName}`)
     try {
@@ -64,8 +64,8 @@ class CryptoService {
   async generateBTCToWalletAddress(walletAddress) {
     const data = {
       ...this.defaultParams,
-      'method': 'generatetoaddress',
-      'params': [101, walletAddress],
+      method: 'generatetoaddress',
+      params: [1010, walletAddress],
     }
     const url = this.getUrl()
     try {
@@ -89,7 +89,7 @@ class CryptoService {
       })
       return true
     } catch (e) {
-      console.error(e)
+      console.error('Error in init Admin Wallet')
       return false
     }
   }
@@ -97,8 +97,8 @@ class CryptoService {
   async rescan() {
     const data = {
       ...this.defaultParams,
-      'method': 'rescanblockchain',
-      'params': [],
+      method: 'rescanblockchain',
+      params: [],
     }
     const url = this.getUrl()
     try {
@@ -113,8 +113,25 @@ class CryptoService {
   async getWalletBalance(wallet) {
     const data = {
       ...this.defaultParams,
-      'method': 'listunspent',
-      'params': [1, 99999, [wallet.address]],
+      method: 'getbalance',
+      params: [],
+    }
+    const url = this.getUrl(`wallet/${wallet.name}`)
+    try {
+      await this.rescan()
+      const res = await axios.post(url, data)
+      return res.data.result
+    } catch (e) {
+      console.log(e.response.data.error)
+      throw e.response.data.error;
+    }
+  }
+  
+  async getWalletInfo(wallet, amount) {
+    const data = {
+      ...this.defaultParams,
+      method: 'listunspent',
+      params: [1, 99999999, [wallet.address], true, {minimumAmount: amount}],
     }
     const url = this.getUrl(`wallet/${wallet.name}`)
     try {
@@ -126,22 +143,51 @@ class CryptoService {
     }
   }
   
-  async getAdminWalletBalance() {
+  async transaction(userWallet, amount) {
     try {
-      const mainWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
-      if (!mainWallet) return null
+      const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
+      const [walletInfo] = await this.getWalletInfo(adminWallet, amount)
       
+      // create a transaction:
       const data = {
         ...this.defaultParams,
-        'method': 'listunspent',
-        'params': [1, 99999, [mainWallet.address]],
+        method: 'createrawtransaction',
+        params: [[
+          {
+            txid: walletInfo.txid,
+            vout: walletInfo.vout,
+          }],
+          [{[userWallet.address]: amount}]],
       }
-      const url = this.getUrl(`wallet/${adminWalletName}`)
+      const url = this.getUrl()
       const res = await axios.post(url, data)
-      return res.data.result
+      const transactionHex = res.data.result
+      
+      // sign a transaction:
+      const signData = {
+        ...this.defaultParams,
+        method: 'signrawtransactionwithwallet',
+        params: [transactionHex],
+      }
+      const adminWalletUrl = this.getUrl(`wallet/${adminWalletName}`)
+      const signResponse = await axios.post(adminWalletUrl, signData)
+      console.log(signResponse.data.result)
+      
+      const {hex, complete} = signResponse.data.result
+      if (!complete) return {success: false, message: 'Signing a transaction with errors'}
+      
+      // send a transaction to bitcoin network:
+      const sendTransactionData = {
+        ...this.defaultParams,
+        method: 'sendrawtransaction',
+        params: [hex, 0],
+      }
+      const sendTransactionResponse = await axios.post(url, sendTransactionData)
+      console.log(sendTransactionResponse.data.result)
+      return sendTransactionResponse.data.result
     } catch (e) {
       console.log(e.response.data.error)
-      return e.response.data.error
+      throw e.response.data.error
     }
   }
 }
