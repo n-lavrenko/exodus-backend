@@ -61,15 +61,27 @@ class CryptoService {
     }
   }
   
-  async generateBTCToWalletAddress(walletAddress) {
+  async generateBTCToWalletAddress(walletAddress, amount = 101) {
     const data = {
       ...this.defaultParams,
       method: 'generatetoaddress',
-      params: [1010, walletAddress],
+      params: [amount, walletAddress],
     }
     const url = this.getUrl()
     try {
       await axios.post(url, data)
+    } catch (e) {
+      throw new Error(e)
+    }
+  }
+  async getTransactions(walletName) {
+    const data = {
+      ...this.defaultParams,
+      method: 'listtransactions',
+    }
+    const url = this.getUrl(`wallet/${walletName}`)
+    try {
+      return await axios.post(url, data)
     } catch (e) {
       throw new Error(e)
     }
@@ -94,22 +106,6 @@ class CryptoService {
     }
   }
   
-  async rescan() {
-    const data = {
-      ...this.defaultParams,
-      method: 'rescanblockchain',
-      params: [],
-    }
-    const url = this.getUrl()
-    try {
-      const response = await axios.post(url, data)
-      console.log(response.data.result)
-    } catch (e) {
-      console.log(e.response.data.error)
-      throw e.response.data.error;
-    }
-  }
-  
   async getWalletBalance(wallet) {
     const data = {
       ...this.defaultParams,
@@ -118,7 +114,6 @@ class CryptoService {
     }
     const url = this.getUrl(`wallet/${wallet.name}`)
     try {
-      await this.rescan()
       const res = await axios.post(url, data)
       return res.data.result
     } catch (e) {
@@ -155,7 +150,7 @@ class CryptoService {
         params: [[
           {
             txid: walletInfo.txid,
-            vout: walletInfo.vout,
+            vout: 0,
           }],
           [{[userWallet.address]: amount}]],
       }
@@ -171,7 +166,6 @@ class CryptoService {
       }
       const adminWalletUrl = this.getUrl(`wallet/${adminWalletName}`)
       const signResponse = await axios.post(adminWalletUrl, signData)
-      console.log(signResponse.data.result)
       
       const {hex, complete} = signResponse.data.result
       if (!complete) return {success: false, message: 'Signing a transaction with errors'}
@@ -182,9 +176,10 @@ class CryptoService {
         method: 'sendrawtransaction',
         params: [hex, 0],
       }
-      const sendTransactionResponse = await axios.post(url, sendTransactionData)
-      console.log(sendTransactionResponse.data.result)
-      return sendTransactionResponse.data.result
+      await axios.post(url, sendTransactionData)
+      await this.generateBTCToWalletAddress(adminWallet.address, 1)
+      const balance = await cryptoService.getWalletBalance(userWallet)
+      return {success: true, balance}
     } catch (e) {
       console.log(e.response.data.error)
       throw e.response.data.error

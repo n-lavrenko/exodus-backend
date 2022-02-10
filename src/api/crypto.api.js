@@ -44,6 +44,19 @@ async function getAdminBalance(req, res) {
   }
 }
 
+
+async function getAdminTransactions(req, res) {
+  try {
+    const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
+    if (!adminWallet) return res.send({message: 'Admin wallet not found'})
+    
+    const result = await cryptoService.getTransactions(adminWallet.name)
+    res.send({success: true, transactions: result.data.result})
+  } catch (e) {
+    res.status(500).send({message: 'Something went wrong', error: e})
+  }
+}
+
 async function getUserBalance(req, res) {
   try {
     const userWallet = await CryptoWalletModel.findOne({
@@ -66,9 +79,9 @@ async function transaction(req, res) {
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
     
-    const result = await cryptoService.transaction(userWallet, amount)
+    const success = await cryptoService.transaction(userWallet, +amount)
     
-    res.send({success: true, result})
+    res.send({success})
   } catch (e) {
     res.status(500).send({success: false, error: e})
   }
@@ -78,5 +91,6 @@ router.post('/create-wallet', loginRequiredMdl, createWallet)
 router.get('/admin-balance', loginRequiredMdl, getAdminBalance)
 router.get('/user-balance', loginRequiredMdl, getUserBalance)
 router.post('/transaction', loginRequiredMdl, transaction)
+router.get('/admin-transactions', loginRequiredMdl, getAdminTransactions)
 
 export const cryptoRouter = router
