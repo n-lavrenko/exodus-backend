@@ -34,8 +34,8 @@ async function createWallet(req, res) {
 
 async function getAdminBalance(req, res) {
   try {
-    const result = await cryptoService.getWalletBalance(adminWalletName)
-    res.send({success: true, balance: result})
+    const balance = await cryptoService.getWalletBalance(adminWalletName)
+    res.send({success: true, balance})
   } catch (e) {
     res.status(500).send({message: 'Something went wrong', error: e})
   }
@@ -60,9 +60,14 @@ async function getUserBalance(req, res) {
       where: {userId: req.userId}
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
-    const result = await cryptoService.getWalletBalance(userWallet.name)
+    const balance = await cryptoService.getWalletBalance(userWallet.name)
     
-    res.send({success: true, balance: result})
+    res.send({
+      success: true,
+      balance,
+      walletName: userWallet.name,
+      walletAddress: userWallet.address
+    })
   } catch (e) {
     res.status(500).send({success: false, error: e})
   }
@@ -95,7 +100,7 @@ async function depositAdminWallet(req, res) {
 
 router.post('/create-wallet', loginRequiredMdl, createWallet)
 router.get('/admin-balance', loginRequiredMdl, getAdminBalance)
-router.get('/user-balance', loginRequiredMdl, getUserBalance)
+router.get('/wallet-info', loginRequiredMdl, getUserBalance)
 router.post('/transaction', loginRequiredMdl, transaction)
 router.get('/admin-transactions', loginRequiredMdl, getAdminTransactions)
 router.post('/deposit-admin-wallet', depositAdminWallet)
