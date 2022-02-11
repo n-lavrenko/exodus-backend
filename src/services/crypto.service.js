@@ -13,7 +13,7 @@ class CryptoService {
   }
   
   generateWalletName() {
-    return nanoid(32);
+    return nanoid(44);
   }
   
   getUrl(restString) {

@@ -65,6 +65,7 @@ async function getUserBalance(req, res) {
     res.send({
       success: true,
       balance,
+      isWalletCreated: true,
       walletName: userWallet.name,
       walletAddress: userWallet.address
     })
