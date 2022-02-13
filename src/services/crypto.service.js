@@ -20,7 +20,8 @@ class CryptoService {
     // should be secured on env vars, sure:
     const USER = '1234'
     const PASS = '1234'
-    return `http://${USER}:${PASS}@127.0.0.1:18443/` + (restString ? restString : '')
+    return `http://${USER}:${PASS}@127.0.0.1:8332/bitcoind/` + (restString ? restString : '')
+    // return `http://${USER}:${PASS}@159.223.30.179:18443/` + (restString ? restString : '')
   }
   
   async createWallet(name) {
@@ -32,6 +33,7 @@ class CryptoService {
     }
     const url = this.getUrl()
     try {
+      console.log(url, data)
       const res = await axios.post(url, data)
       if (res.data.result) {
         return {success: true, walletName}
