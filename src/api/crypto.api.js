@@ -16,6 +16,9 @@ async function createWallet(req, res) {
     if (existsWallet) {
       return res.send({
         message: 'A wallet was already created',
+        success: true,
+        balance: 0,
+        isWalletCreated: true,
         walletName: existsWallet.name,
         walletAddress: existsWallet.address
       })
@@ -26,7 +29,14 @@ async function createWallet(req, res) {
     
     await CryptoWalletModel.create({userId: req.userId, name: walletName, address: walletAddress})
     
-    res.send({message: 'A wallet was created', walletName, walletAddress})
+    res.send({
+      message: 'A wallet was created',
+      success: true,
+      balance: 0,
+      isWalletCreated: true,
+      walletName,
+      walletAddress,
+    })
   } catch (e) {
     res.status(500).send({message: 'Something went wrong', error: e})
   }
@@ -74,7 +84,7 @@ async function getUserBalance(req, res) {
   }
 }
 
-async function transaction(req, res) {
+async function depositBTCWallet(req, res) {
   const {amount} = req.body
   try {
     const userWallet = await CryptoWalletModel.findOne({
@@ -82,28 +92,19 @@ async function transaction(req, res) {
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
     
-    const success = await cryptoService.transaction(+amount, userWallet)
+    const {success, balance} = await cryptoService.transaction(+amount, userWallet)
     
-    res.send({success})
-  } catch (e) {
-    res.status(500).send({success: false, error: e})
-  }
-}
-async function depositAdminWallet(req, res) {
-  const {amount} = req.body
-  try {
-    const {success, balance} = await cryptoService.depositAdminWallet(+amount)
     res.send({success, balance})
   } catch (e) {
     res.status(500).send({success: false, error: e})
   }
 }
 
+
 router.post('/create-wallet', loginRequiredMdl, createWallet)
 router.get('/admin-balance', loginRequiredMdl, getAdminBalance)
 router.get('/wallet-info', loginRequiredMdl, getUserBalance)
-router.post('/transaction', loginRequiredMdl, transaction)
 router.get('/admin-transactions', loginRequiredMdl, getAdminTransactions)
-router.post('/deposit-admin-wallet', depositAdminWallet)
+router.post('/deposit-btc-wallet', loginRequiredMdl, depositBTCWallet)
 
 export const cryptoRouter = router

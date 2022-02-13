@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { nanoid } from 'nanoid'
-import { adminWalletName, miningWalletName } from '../constants.js';
+import { adminWalletName } from '../constants.js';
 import { CryptoWalletModel } from '../sequelize/models/crypto-wallet.model.js';
 
 
@@ -61,7 +61,7 @@ class CryptoService {
     }
   }
   
-  async generateBTCToWalletAddress(walletAddress, amount = 101) {
+  async mineBTCToWalletAddress(walletAddress, amount = 202) {
     const data = {
       ...this.defaultParams,
       method: 'generatetoaddress',
@@ -91,8 +91,7 @@ class CryptoService {
   async initRootWallets() {
     try {
       const isAdminWalletExist = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
-      const isMiningWalletExist = await CryptoWalletModel.findOne({where: {name: miningWalletName}})
-      if (isAdminWalletExist || isMiningWalletExist) return true;
+      if (isAdminWalletExist) return true;
   
       await this.createWallet(adminWalletName)
       const {walletAddress: walletAdminAddress} = await this.createWalletAddress(adminWalletName)
@@ -103,23 +102,10 @@ class CryptoService {
       }
       await CryptoWalletModel.create(adminWallet)
       
-      await this.createWallet(miningWalletName)
-      const {walletAddress: walletMiningAddress} = await this.createWalletAddress(miningWalletName)
-      
-      await CryptoWalletModel.create({
-        name: miningWalletName,
-        address: walletMiningAddress,
-      })
-      
-      await this.generateBTCToWalletAddress(walletMiningAddress)
-      const miningBalance = await this.getWalletBalance(miningWalletName)
-      if (miningBalance < 40) {
-        await this.generateBTCToWalletAddress(walletMiningAddress, 101)
-      }
-      return await this.transaction(40, adminWallet, miningWalletName)
+      await this.mineBTCToWalletAddress(walletAdminAddress, 101)
     } catch (e) {
       console.error('Error in init Admin Wallet')
-      return false
+      return {success: false, balance: 'Unknown'}
     }
   }
   
@@ -131,8 +117,24 @@ class CryptoService {
     }
     const url = this.getUrl(`wallet/${walletName}`)
     try {
+      await this.rescan(walletName)
       const res = await axios.post(url, data)
       return res.data.result
+    } catch (e) {
+      console.log(e.response.data.error)
+      throw e.response.data.error;
+    }
+  }
+  
+  async rescan(walletName) {
+    const data = {
+      ...this.defaultParams,
+      method: 'rescanblockchain',
+      params: [],
+    }
+    const url = this.getUrl(`wallet/${walletName}`)
+    try {
+      await axios.post(url, data)
     } catch (e) {
       console.log(e.response.data.error)
       throw e.response.data.error;
@@ -143,10 +145,11 @@ class CryptoService {
     const data = {
       ...this.defaultParams,
       method: 'listunspent',
-      params: [1, 99999999, [wallet.address], true, {minimumAmount: amount}],
+      params: [null, null, [wallet.address], true, {minimumAmount: amount}],
     }
     const url = this.getUrl(`wallet/${wallet.name}`)
     try {
+      await this.rescan(wallet.name)
       const res = await axios.post(url, data)
       return res.data.result
     } catch (e) {
@@ -168,7 +171,8 @@ class CryptoService {
         params: [[
           {
             txid: walletInfo.txid,
-            vout: 0,
+            vout: walletInfo.vout,
+            address: walletInfo.address
           }],
           [{[toWallet.address]: amount}]],
       }
@@ -196,23 +200,14 @@ class CryptoService {
       }
       await axios.post(url, sendTransactionData)
       
-      const miningWallet = await CryptoWalletModel.findOne({where: {name: miningWalletName}})
-      await this.generateBTCToWalletAddress(miningWallet.address, 1)
+      const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
+      await this.mineBTCToWalletAddress(adminWallet.address, 1)
       
       const balance = await cryptoService.getWalletBalance(toWallet.name)
       return {success: true, balance}
     } catch (e) {
       console.log(e.response.data.error)
       throw e.response.data.error
-    }
-  }
-  
-  async depositAdminWallet(amount) {
-    try {
-      const adminWallet = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
-      return await this.transaction(amount, adminWallet, miningWalletName)
-    } catch (e) {
-      throw e.message || e.response.data
     }
   }
 }

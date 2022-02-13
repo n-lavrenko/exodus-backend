@@ -1,4 +1,5 @@
 import { app } from './app'
+import { adminWalletName } from './constants.js';
 import { PORT } from './envs.js';
 import { sequelize } from './sequelize/connect.js';
 import { createAssociations } from './sequelize/models/associations'
@@ -27,10 +28,9 @@ async function init() {
     createAssociations()
     await sequelizeSync()
     // await sequelizeSync(true)
-    const {balance, success} = await cryptoService.initRootWallets()
-    if (success) {
-      console.log(`Admin wallet has ${balance} BTC`)
-    }
+    await cryptoService.initRootWallets()
+    const balance = await cryptoService.getWalletBalance(adminWalletName)
+    console.log(`Admin wallet has ${balance} BTC`)
   } catch (e) {
     console.log(e)
     throw e
