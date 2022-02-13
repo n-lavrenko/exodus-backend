@@ -210,6 +210,21 @@ class CryptoService {
       throw e.response.data.error
     }
   }
+  
+  async getBTCPrice() {
+    const coin_market_cap_api_key = 'e0d2cb59-0d40-4f44-8390-26bdd66232bc'
+    try {
+      const response = await axios.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=1', {
+        headers: {
+          'X-CMC_PRO_API_KEY': coin_market_cap_api_key,
+        },
+      })
+  
+      return response.data.data[0].quote.USD.price.toFixed(2)
+    } catch (e) {
+      return 0
+    }
+  }
 }
 
 

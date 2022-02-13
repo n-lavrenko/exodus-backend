@@ -1,7 +1,7 @@
 import express from 'express';
 import { loginRequiredMdl } from '../middlewars/login-require.mdl';
 import { PlaidLinkModel } from '../sequelize/models/plaid-link.model.js';
-import { plaidClient } from '../services/plaid.service.js';
+import { getPlaidAccounts, plaidClient } from '../services/plaid.service.js';
 
 
 const router = express.Router()
@@ -50,20 +50,8 @@ async function exchangePublicToken(req, res) {
 
 async function getAccounts(req, res) {
   try {
-    const link = await PlaidLinkModel.findOne({
-      where: {
-        userId: req.userId,
-      },
-    })
-    if (!link) {
-      return res.status(404).send('You are not linked your banking account')
-    }
-    
-    const accountsResponse = await plaidClient.accountsBalanceGet({
-      access_token: link.accessToken,
-    });
-    accountsResponse.data.accounts = accountsResponse.data.accounts.filter(a => a.balances.available > 0)
-    res.send(accountsResponse.data.accounts)
+    const {accounts} = await getPlaidAccounts(req.userId)
+    res.send({accounts, success: true})
   } catch (error) {
     return res.json(error.response)
   }

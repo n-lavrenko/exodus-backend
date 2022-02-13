@@ -1,9 +1,9 @@
-import axios from 'axios';
 import express from 'express';
 import { adminWalletName } from '../constants.js';
 import { loginRequiredMdl } from '../middlewars/login-require.mdl';
 import { CryptoWalletModel } from '../sequelize/models/crypto-wallet.model.js';
 import { cryptoService } from '../services/crypto.service.js';
+import { getPlaidAccounts } from '../services/plaid.service.js';
 
 
 const router = express.Router()
@@ -12,7 +12,7 @@ const router = express.Router()
 async function createWallet(req, res) {
   try {
     const existsWallet = await CryptoWalletModel.findOne({
-      where: {userId: req.userId}
+      where: {userId: req.userId},
     })
     if (existsWallet) {
       const balance = await cryptoService.getWalletBalance(existsWallet.name)
@@ -22,7 +22,7 @@ async function createWallet(req, res) {
         balance,
         isWalletCreated: true,
         walletName: existsWallet.name,
-        walletAddress: existsWallet.address
+        walletAddress: existsWallet.address,
       })
     }
     
@@ -69,7 +69,7 @@ async function getAdminTransactions(req, res) {
 async function getUserBalance(req, res) {
   try {
     const userWallet = await CryptoWalletModel.findOne({
-      where: {userId: req.userId}
+      where: {userId: req.userId},
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
     const balance = await cryptoService.getWalletBalance(userWallet.name)
@@ -79,22 +79,32 @@ async function getUserBalance(req, res) {
       balance,
       isWalletCreated: true,
       walletName: userWallet.name,
-      walletAddress: userWallet.address
+      walletAddress: userWallet.address,
     })
   } catch (e) {
     res.status(500).send({success: false, error: e})
   }
 }
 
+
 async function depositBTCWallet(req, res) {
-  const {amount} = req.body
+  const {amountBTC, accountId} = req.body
   try {
     const userWallet = await CryptoWalletModel.findOne({
-      where: {userId: req.userId}
+      where: {userId: req.userId},
     })
     if (!userWallet) return res.send({success: false, message: 'User don\'t have a wallet'})
+    const {accounts} = await getPlaidAccounts(req.userId)
+    const selectedAccount = accounts.find(a => a.account_id === accountId)
     
-    const {success, balance} = await cryptoService.transaction(+amount, userWallet)
+    const BTCprice = await cryptoService.getBTCPrice()
+    const availableUSD = selectedAccount.balances.available
+    const payingAmount = +(BTCprice * amountBTC).toFixed(2)
+    
+    if (availableUSD < payingAmount) {
+      return res.send({success: false, message: 'You don\'t have enough money'})
+    }
+    const {success, balance} = await cryptoService.transaction(amountBTC, userWallet)
     
     res.send({success, balance})
   } catch (e) {
@@ -103,20 +113,8 @@ async function depositBTCWallet(req, res) {
 }
 
 async function getBTCPrice(req, res) {
-  const coin_market_cap_api_key = 'e0d2cb59-0d40-4f44-8390-26bdd66232bc'
-  try {
-    const response = await axios.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=1', {
-      headers: {
-        'X-CMC_PRO_API_KEY': coin_market_cap_api_key,
-      },
-    })
-    
-    const price = response.data.data[0].quote.USD.price.toFixed(2)
-    
+    const price = await cryptoService.getBTCPrice()
     res.send({success: true, price})
-  } catch (e) {
-    res.status(500).send({success: false, error: e})
-  }
 }
 
 router.post('/create-wallet', loginRequiredMdl, createWallet)
