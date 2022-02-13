@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --experimental-vm-modules --experimental-specifier-resolution=node node_modules/jest/bin/jest.js",
     "start": "node --experimental-specifier-resolution=node src/index.js",
+    "force-sync": "node --experimental-specifier-resolution=node src/sequelize/sync-force.js",
     "nodemon": "nodemon -e js,pug --experimental-specifier-resolution=node src/index.js --config nodemon.json"
   },
   "type": "module",
@@ -25,6 +26,7 @@
   "dependencies": {
     "axios": "^0.25.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
     "express": "^4.17.2",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",

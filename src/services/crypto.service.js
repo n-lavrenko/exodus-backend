@@ -88,7 +88,7 @@ class CryptoService {
     }
   }
   
-  async initRootWallets() {
+  async initAdminWallet() {
     try {
       const isAdminWalletExist = await CryptoWalletModel.findOne({where: {name: adminWalletName}})
       if (isAdminWalletExist) return true;
@@ -113,7 +113,6 @@ class CryptoService {
     const data = {
       ...this.defaultParams,
       method: 'getbalance',
-      params: [],
     }
     const url = this.getUrl(`wallet/${walletName}`)
     try {

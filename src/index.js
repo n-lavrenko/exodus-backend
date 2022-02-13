@@ -27,8 +27,8 @@ async function init() {
     await assertDatabaseConnectionOk()
     createAssociations()
     await sequelizeSync()
-    // await sequelizeSync(true)
-    await cryptoService.initRootWallets()
+    
+    await cryptoService.initAdminWallet()
     const balance = await cryptoService.getWalletBalance(adminWalletName)
     console.log(`Admin wallet has ${balance} BTC`)
   } catch (e) {
