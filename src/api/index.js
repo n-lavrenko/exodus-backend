@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors'
+import { isTestingByJest } from '../constants.js';
 import { cryptoRouter } from './crypto.api.js';
 import { plaidRouter } from './plaid.api.js';
 import { userRouter } from './user.api.js';
@@ -13,9 +14,9 @@ router.get('/', (req, res) => {
 })
 
 router.use('/api/*', cors(), function (req, res, next) {
-  console.log(req.method + ': ', req.baseUrl)
+  !isTestingByJest && console.log(req.method + ': ', req.baseUrl)
   if (req.method.includes('POST', 'PUT')) {
-    console.log(req.body)
+    !isTestingByJest && console.log(req.body)
   }
   next()
 })
