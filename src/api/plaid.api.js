@@ -50,7 +50,7 @@ async function exchangePublicToken(req, res) {
 
 async function getAccounts(req, res) {
   try {
-    const link = await PlaidLinkModel.find({
+    const link = await PlaidLinkModel.findOne({
       where: {
         userId: req.userId,
       },
@@ -59,11 +59,11 @@ async function getAccounts(req, res) {
       return res.status(404).send('You are not linked your banking account')
     }
     
-    const accountsResponse = await plaidClient.accountsGet({
+    const accountsResponse = await plaidClient.accountsBalanceGet({
       access_token: link.accessToken,
     });
-    
-    res.send(accountsResponse.data)
+    accountsResponse.data.accounts = accountsResponse.data.accounts.filter(a => a.balances.available > 0)
+    res.send(accountsResponse.data.accounts)
   } catch (error) {
     return res.json(error.response)
   }

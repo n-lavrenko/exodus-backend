@@ -1,3 +1,4 @@
+import axios from 'axios';
 import express from 'express';
 import { adminWalletName } from '../constants.js';
 import { loginRequiredMdl } from '../middlewars/login-require.mdl';
@@ -14,10 +15,11 @@ async function createWallet(req, res) {
       where: {userId: req.userId}
     })
     if (existsWallet) {
+      const balance = await cryptoService.getWalletBalance(existsWallet.name)
       return res.send({
         message: 'A wallet was already created',
         success: true,
-        balance: 0,
+        balance,
         isWalletCreated: true,
         walletName: existsWallet.name,
         walletAddress: existsWallet.address
@@ -100,11 +102,28 @@ async function depositBTCWallet(req, res) {
   }
 }
 
+async function getBTCPrice(req, res) {
+  const coin_market_cap_api_key = 'e0d2cb59-0d40-4f44-8390-26bdd66232bc'
+  try {
+    const response = await axios.get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=1', {
+      headers: {
+        'X-CMC_PRO_API_KEY': coin_market_cap_api_key,
+      },
+    })
+    
+    const price = response.data.data[0].quote.USD.price.toFixed(2)
+    
+    res.send({success: true, price})
+  } catch (e) {
+    res.status(500).send({success: false, error: e})
+  }
+}
 
 router.post('/create-wallet', loginRequiredMdl, createWallet)
 router.get('/admin-balance', loginRequiredMdl, getAdminBalance)
 router.get('/wallet-info', loginRequiredMdl, getUserBalance)
 router.get('/admin-transactions', loginRequiredMdl, getAdminTransactions)
 router.post('/deposit-btc-wallet', loginRequiredMdl, depositBTCWallet)
+router.get('/get-btc-price', loginRequiredMdl, getBTCPrice)
 
 export const cryptoRouter = router
